@@ -1,70 +1,70 @@
 @php
     $interest = $pawn->amount * ($pawn->interest_rate / 100); // คำนวณดอกเบี้ย
     $total = $pawn->amount + $interest; // คำนวณยอดรวม
+    $monthlyPayment = $pawn->monthly_payment + $interest;
     $receiptDate = \Carbon\Carbon::now()->format('d-m-Y'); // วันที่ออกใบเสร็จ
+    $receiptNumber = now()->format('d-m-Y') . '-' . $pawn->ticket_id;
+    $remainingBalance = $pawn->amount - $pawn->paid_amount; // คำนวณยอดคงเหลือ
+
 @endphp
 
 <x-app-layout>
     <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-center text-2xl font-semibold mb-6">ใบเสร็จการจำนำ</h2>
+        <h2 class="text-center text-2xl font-semibold mb-6 text-[#D43F00]">ใบเสร็จการชำระเงิน</h2>
 
         <div class="mb-4 text-right">
+            <p><strong>เลขที่ใบเสร็จ:</strong> {{ $receiptNumber }}</p>
             <p><strong>วันที่ออกใบเสร็จ:</strong> {{ now()->format('d-m-Y') }}</p>
         </div>
 
+
         <!-- ข้อมูลลูกค้า -->
         <div class="mb-4">
-            <p>
-                <strong>ลูกค้าชื่อ:</strong> 
-                @foreach ($customers as $customer)
-                    @if ($customer->customer_id == $pawn->customer_id)
-                        {{ $customer->name }}
-                    @endif
-                    @endforeach</p>
             <p><strong>รหัสตั๋วจำนำ:</strong> {{ $pawn->ticket_id }}</p>
+            <p><strong>ชื่อลูกค้า:</strong> {{ $pawn->customer->name }}</p>
+            <p><strong>ชื่อสินค้า:</strong> {{ $pawn->product_name }}</p>
+            <p><strong>คำอธิบายสินค้าที่จำนำ:</strong> {{ $pawn->description ?? 'ไม่ระบุ' }}</p>
         </div>
-        
 
         <!-- ตารางข้อมูลการจำนำ -->
         <table class="min-w-full table-auto border-collapse">
             <thead>
                 <tr class="bg-gray-100">
-                    <th class="px-4 py-2 text-left border-b">รายละเอียด</th>
-                    <th class="px-4 py-2 border-b">ประเภทสินค้า</th>
-                    <th class="px-4 py-2 border-b">มูลค่าสินค้าที่ประเมิน</th>
+                    <th class="px-4 py-2 border-b">ยอดจำนำ</th>
                     <th class="px-4 py-2 border-b">ดอกเบี้ย</th>
-                    <th class="px-4 py-2 border-b">วันที่จำนำ</th>
-                    <th class="px-4 py-2 border-b">วันที่ครบกำหนด</th>
-
+                    <th class="px-4 py-2 border-b">จำนวนเงินที่จ่าย</th>
+                    <th class="px-4 py-2 border-b">ยอดคงเหลือ</th>
+                    
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td class="px-4 py-2 border-b">{{ $pawn->product_name }}</td>
-                    <td class="px-4 py-2 border-b">{{ $pawn->product_name }}</td>
                     <td class="px-4 py-2 border-b">{{ number_format($pawn->amount, 2) }} บาท</td>
-                    <td class="px-4 py-2 border-b">{{ number_format($pawn->interest_rate, 2) }} %</td>
-                    <td class="px-4 py-2 border-b">{{ \Carbon\Carbon::parse($pawn->pawn_date)->format('d-m-Y') }}</td>
-                    <td class="px-4 py-2 border-b">{{ \Carbon\Carbon::parse($pawn->due_date)->format('d-m-Y') }}</td>
-
+                    <td class="px-4 py-2 border-b">{{ number_format($interest, 2) }} บาท</td>
+                    <td class="px-4 py-2 border-b">{{ number_format($monthlyPayment, 2) }} บาท</td>
+                    <td class="px-4 py-2 border-b">{{ number_format($remainingBalance, 2) }} บาท</td>
                 </tr>
             </tbody>
         </table>
 
-        <div class="mb-4 text-right">
-            <p><strong>จำนวนมูลค่าสินค้าที่ประเมิน :</strong> {{ number_format($pawn->amount, 2) }} บาท </p>
-            <p><strong>ดอกเบี้ย :</strong> {{ number_format($interest, 2) }} บาท</p>
-            <p><strong>รวมทั้งหมด :</strong> {{ number_format($total, 2) }} บาท</p>
-        </div>
-
-
         <!-- ปิดท้ายใบเสร็จ -->
+        <div class="mt-6 ">
+            <p>ข้าพเจ้าขอรับรองว่า ทรัพย์ที่ขายนี้เป็นกรรมสิทธิ์ของข้าพเจ้าโดยชอบด้วยกฎหมายแต่ผู้เดียว เพื่อเป็นหลักฐานจึงได้ออกใบรับนี้ไว้เป็นหลักฐานต่อหน้าพยาน</p>
+        </div>
+        <div class="mt-6 text-right">
+    <p>
+        (ลงชื่อ)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(ผู้ขาย)
+    </p>
+    <p>
+        (ลงชื่อ)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (พยาน)
+    </p>
+    <p>
+        (ลงชื่อ)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (พยาน)
+    </p>
+</div>
+
         <div class="mt-6 text-center">
             <p>ขอบคุณที่ใช้บริการ!</p>
         </div>
     </div>
 </x-app-layout>
-
-
-
-

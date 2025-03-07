@@ -9,7 +9,7 @@
                 </div>
             @endif
 
-           
+            
 
             <table class="min-w-full bg-white border border-[#D43F00] rounded-lg">
                 <thead>
@@ -23,12 +23,12 @@
                         <th class="py-3 px-6 border-b">วันที่ทำการจำนำ</th>
                         <th class="py-3 px-6 border-b">วันที่ครบกำหนด</th>
                         <th class="py-3 px-6 border-b">รายละเอียด</th>
-                        <th class="py-3 px-6 border-b">บันทึกการจ่ายเงิน</th>
+                        
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($pawns as $pawn)
-                        @if ($pawn->status == 'active')
+                        @if ($pawn->status == 'completed')
                             <tr class="hover:bg-gray-100">
                                 <td class="py-3 px-6 border-b text-[#000000]">{{ $pawn->id }}</td>
                                 <td class="py-3 px-6 border-b text-[#000000]">{{ $pawn->ticket_id }}</td>
@@ -47,11 +47,7 @@
                                 <td class="py-3 px-6 border-b text-[#000000]">
                                     <a href="{{ route('pawns.show', $pawn->id) }}" class="text-[#D43F00] hover:text-[#FF9800]">ดูเพิ่มเติม</a>
                                 </td>
-                                <td class="py-3 px-6 border-b text-[#000000]">
-                                    <a href="{{ route('pawns.pay', $pawn->id) }}" class="bg-[#D43F00] text-white py-2 px-4 rounded-md hover:bg-[#FF9800]">
-                                        ชำระเงิน
-                                    </a>
-                                </td>
+                                
                             </tr>
                         @endif
                     @endforeach

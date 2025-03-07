@@ -6,15 +6,12 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-mark class="block h-9 w-auto" />
+                    <img src="{{ asset('img/logo1.jpg') }}" alt="Logo" class="block h-9 w-auto rounded-full object-cover" />
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
                     <x-nav-link href="{{ route('customers.index') }}" :active="request()->routeIs('customers.index')">
                         {{ __('ข้อมูลลูกค้าทั้งหมด') }}
                     </x-nav-link>
@@ -23,6 +20,12 @@
                     </x-nav-link>
                     <x-nav-link href="{{ route('pawns.index') }}" :active="request()->routeIs('pawns.index')">
                         {{ __('ข้อมูลรายการจำนำทอง') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('pawns.indexcomplete') }}" :active="request()->routeIs('pawns.indexcomplete')">
+                        {{ __('ข้อมูลรายการจำนำทองที่เสร็จสิ้นแล้ว') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('pawns.indexexpired') }}" :active="request()->routeIs('pawns.indexexpired')">
+                        {{ __('ข้อมูลรายการจำนำทองที่หลุดจำนำ') }}
                     </x-nav-link>
                 </div>
             </div>

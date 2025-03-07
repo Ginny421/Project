@@ -8,7 +8,9 @@ use Carbon\Carbon;
 use App\Models\Transaction;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Http;
-
+use App\Models\PayPerMonth;
+use App\Models\PayTotal;
+use App\Models\AllPay;
 
 
 class PawnController extends Controller
@@ -16,7 +18,7 @@ class PawnController extends Controller
     public function index(Request $request)
 {
     // รับค่า sort_by จาก request ถ้าไม่มีจะใช้ค่าเริ่มต้นเป็น 'due_date'
-    $sortBy = $request->get('sort_by', 'due_date'); 
+    $sortBy = $request->get('sort_by', 'ticket_id'); 
 
     // จัดเรียงข้อมูลตามตัวเลือกที่เลือก
     $pawns = PawnedItem::orderBy($sortBy, 'asc')->get();
@@ -28,13 +30,51 @@ class PawnController extends Controller
     return view('pawns.index', compact('pawns', 'customers'));
 }
 
+public function indexComplete(Request $request)
+{
+    $sortBy = $request->get('sort_by', 'ticket_id');
+
+    // กรองรายการที่สถานะเป็น 'completed'
+    $pawns = PawnedItem::where('status', 'completed')
+                        ->orderBy($sortBy, 'asc')
+                        ->get();
+
+    $customers = Customer::all();
+
+    return view('pawns.indexcomplete', compact('pawns', 'customers'));
+}
+
+public function indexExpired(Request $request)
+{
+    $sortBy = $request->get('sort_by', 'ticket_id');
+
+    // กรองรายการที่สถานะเป็น 'completed'
+    $pawns = PawnedItem::where('status', 'expired')
+                        ->orderBy($sortBy, 'asc')
+                        ->get();
+
+    $customers = Customer::all();
+
+    return view('pawns.indexcomplete', compact('pawns', 'customers'));
+}
+
+
 
     // Show pawn details
     public function show($id)
     {
-        $pawn = PawnedItem::findOrFail($id);
-        $customers = Customer::all();
-        return view('pawns.show', compact('pawn','customers'));
+       // ดึงข้อมูล pawned item พร้อมกับข้อมูลของลูกค้า
+    $pawn = PawnedItem::with(['customer', 'payPerMonths'])->findOrFail($id);
+
+    // คำนวณยอดที่ลูกค้าจ่ายไปแล้ว
+    $totalPaid = $pawn->payPerMonths->sum('monthly_payment');
+
+    // คำนวณยอดที่เหลือ (ยอดที่ต้องชำระทั้งหมด - ยอดที่จ่ายไปแล้ว)
+    $totalAmount = $pawn->amount + ($pawn->amount * $pawn->interest_rate / 100);
+    $remainingBalance = $totalAmount - $totalPaid;
+
+    // ส่งข้อมูลทั้งหมดไปยัง view
+    return view('pawns.show', compact('pawn','totalPaid', 'remainingBalance'));
     }
 
     public function create()
@@ -57,43 +97,54 @@ class PawnController extends Controller
         'product_name' => 'required|string|max:255',
         'amount' => 'required|numeric',
         'interest_rate' => 'required|numeric',
+        'description' => 'nullable|string',
         'pawn_date' => 'required|date',
         'due_date_pawn' => 'required|date|after_or_equal:pawn_date',
         'pawn_duration' => 'required|integer|min:1',
-        'transaction_date' => 'required|date',
         'backup_interest_rate' => 'required|numeric',
-        'amount_paid' => 'required|numeric',
     ]);
+
+    // คำนวณ interestPerMonth
+    $interestPerMonth = ($validated['interest_rate'] / 100) * $validated['amount'] / 12;
+
+    // คำนวณ totalMonthlyPayment
+    $totalMonthlyPayment = ($validated['amount'] / $validated['pawn_duration']) + $interestPerMonth;
 
     // Generate ticket_id
     $latestTicket = PawnedItem::latest('ticket_id')->first();
     $nextTicketId = $latestTicket ? (int)$latestTicket->ticket_id + 1 : 1;
     $ticketId = str_pad($nextTicketId, 6, '0', STR_PAD_LEFT);
 
-// ✅ สร้าง PawnedItem
-$pawnedItem = PawnedItem::create([
-    'ticket_id' => $ticketId,
-    'customer_id' => $validated['customer_id'],
-    'product_name' => $validated['product_name'],
-    'amount' => $validated['amount'],
-    'interest_rate' => $validated['interest_rate'],
-    'pawn_date' => $validated['pawn_date'],
-    'due_date' => $validated['due_date_pawn'],
-    'pawn_duration' => $validated['pawn_duration'],
-]);
+    // ✅ สร้าง PawnedItem
+    $pawnedItem = PawnedItem::create([
+        'ticket_id' => $ticketId,
+        'customer_id' => $validated['customer_id'],
+        'product_name' => $validated['product_name'],
+        'amount' => $validated['amount'],
+        'interest_rate' => $validated['interest_rate'],
+        'pawn_date' => $validated['pawn_date'],
+        'due_date' => $validated['due_date_pawn'],
+        'pawn_duration' => $validated['pawn_duration'],
+        'description' => $validated['description'],
+    ]);
 
     // ✅ สร้าง Transaction
     Transaction::create([
         'pawned_item_id' => $pawnedItem->id,
-        'transaction_date' => $validated['transaction_date'],
+        'transaction_date' => $validated['pawn_date'],
         'backup_interest_rate' => $validated['backup_interest_rate'],
-        'amount_paid' => $validated['amount_paid'],
     ]);
 
-
+    // ✅ บันทึกข้อมูลในตาราง pay_per_month
+    PayPerMonth::create([
+        'pawned_item_id' => $pawnedItem->id,
+        'interest' => $interestPerMonth,
+        'total_monthly_payment' => $totalMonthlyPayment,
+    ]);
 
     return redirect()->route('pawns.index')->with('success', 'เพิ่มข้อมูลการจำนำและธุรกรรมสำเร็จ!');
 }
+
 
     
 
@@ -110,65 +161,69 @@ public function receipt($id)
 }
 
 
-// ฟังก์ชันสำหรับการส่งข้อความแจ้งเตือน
-public function sendLineNotification($message, $lineUserId)
-{
-    $accessToken = '2006988877';  // ใส่ Channel Access Token ของคุณที่นี่
 
-    $response = Http::withHeaders([
-        'Authorization' => 'Bearer ' . $accessToken
-    ])->post('https://api.line.me/v2/bot/message/push', [
-        'to' => $lineUserId,
-        'messages' => [
-            [
-                'type' => 'text',
-                'text' => $message
-            ]
-        ]
+public function processPayment(Request $request, $id)
+{
+    $pawn = PawnedItem::findOrFail($id);
+
+    // รับค่าที่ลูกค้าชำระ
+    $paymentAmount = $request->input('payment_amount');
+
+    // คำนวณยอดที่ต้องจ่ายทั้งหมด (เงินต้น + ดอกเบี้ย)
+    $totalAmount = $pawn->amount + ($pawn->amount * $pawn->interest_rate / 100);
+
+    // คำนวณยอดที่ชำระไปแล้วจากการบันทึกในฐานข้อมูล
+    $totalPaid = $pawn->payPerMonths->sum('total_monthly_payment');
+
+    // คำนวณยอดคงเหลือ (ยอดที่ต้องจ่ายทั้งหมด - ยอดที่ชำระไปแล้ว)
+    $remainingBalance = $totalAmount - $totalPaid;
+
+    // ลดยอดที่ลูกค้าชำระออกจากยอดคงเหลือ
+    $remainingBalance -= $paymentAmount;
+
+    // บันทึกข้อมูลการชำระเงินลงในฐานข้อมูล
+    $totalMonthlyPayment = $paymentAmount;
+    $payPerMonth = $pawn->payPerMonths()->create([
+        'interest' => $pawn->interest_rate,
+        'total_monthly_payment' => $totalMonthlyPayment,
     ]);
 
-    // เช็คสถานะการตอบกลับจาก LINE API
-    if ($response->successful()) {
-        return response()->json(['status' => 'success']);
+    // อัปเดตยอดคงเหลือใน PawnedItem
+    $pawn->remaining_balance = $remainingBalance;
+
+    // ตรวจสอบวันที่ครบกำหนด หากเลยกำหนดแล้วแต่ยังไม่ได้ชำระ เปลี่ยนสถานะเป็น 'expired'
+    if (now()->greaterThan($pawn->due_date) && $remainingBalance > 0) {
+        $pawn->status = 'expired'; // เปลี่ยนสถานะเป็น 'expired' หรือ 'หลุดจำนำ'
+    } elseif ($remainingBalance <= 0) {
+        // ถ้าชำระเงินหมดแล้ว เปลี่ยนสถานะเป็น 'completed'
+        $pawn->status = 'completed';
+        $pawn->remaining_balance = 0; // ตั้งยอดคงเหลือเป็น 0 ถ้าชำระครบ
     } else {
-        return response()->json(['status' => 'error', 'message' => $response->body()]);
+        $pawn->status = 'active'; // ถ้ายังไม่ครบยอด เปลี่ยนสถานะเป็น 'active'
     }
-}
 
-// ฟังก์ชันสำหรับการแจ้งเตือนลูกค้า
-public function notifyCustomer($customerId)
+    // บันทึกการเปลี่ยนแปลงในฐานข้อมูล
+    $pawn->save();
+
+    // แสดงข้อความสำเร็จและส่งข้อมูลไปยังหน้าแรก
+// แสดงข้อความสำเร็จและส่งข้อมูลไปยังหน้าใบเสร็จ
+return redirect()->route('pawns.receipt', ['id' => $pawn->id]);
+
+;}
+
+// เพิ่มฟังก์ชัน pay() ใน PawnController
+public function pay($id)
 {
-    // ดึงข้อมูลลูกค้าที่มี line_user_id
-    $customer = Customer::find($customerId);
+    // ค้นหาข้อมูลจำนำจากฐานข้อมูล
+    $pawn = PawnedItem::findOrFail($id);
 
-    if ($customer) {
-        // สร้างข้อความแจ้งเตือน
-        $message = "สวัสดีครับ/ค่ะ, ลูกค้าท่านนี้มีสินค้าที่จำนำและกำลังจะครบกำหนด! กรุณาติดต่อเราสำหรับรายละเอียดเพิ่มเติม.";
-        $lineUserId = $customer->line_user_id;  // ดึง line_user_id ของลูกค้า
+    // คำนวณยอดคงเหลือ (ยอดทั้งหมดที่ต้องจ่าย - ยอดที่ชำระไปแล้ว)
+    $totalAmount = $pawn->amount + ($pawn->amount * $pawn->interest_rate / 100);
+    $totalPaid = $pawn->payPerMonths->sum('total_monthly_payment');
+    $remainingBalance = $totalAmount - $totalPaid;
 
-        // เรียกฟังก์ชันส่งข้อความ
-        $this->sendLineNotification($message, $lineUserId);
-    }
+    // ส่งข้อมูลไปยัง Blade template
+    return view('pawns.pay', compact('pawn', 'remainingBalance'));
 }
 
-// ฟังก์ชันสำหรับการส่งแจ้งเตือนหาลูกค้าทั้งหมด
-public function sendNotification(Request $request)
-{
-    // ส่งข้อความแจ้งเตือนให้กับลูกค้าทั้งหมด
-    $customers = Customer::all();
-    foreach ($customers as $customer) {
-        // คุณอาจจะใช้ queue สำหรับการทำงานแบบ asynchronous ที่นี่
-        $this->notifyCustomer($customer->id);
-    }
-
-    return redirect()->route('pawns.index')->with('success', 'ส่งข้อความแจ้งเตือนสำเร็จ!');
 }
-}
-
-
-    
-
-
-
-
-

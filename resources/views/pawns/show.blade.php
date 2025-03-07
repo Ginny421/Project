@@ -1,69 +1,72 @@
 <x-app-layout>
-    <div class="max-w-7xl mx-auto p-6 bg-white shadow-md rounded-lg">
-        <h2 class="text-2xl font-semibold text-center mb-6">รายละเอียดการจำนำทอง</h2>
+    <div class="min-h-screen bg-gradient-to-r from-[#D43F00] to-[#FFC107] text-white py-8">
+        <div class="max-w-7xl mx-auto p-8 bg-white shadow-lg rounded-lg">
+            <h2 class="text-3xl font-semibold text-center text-[#D43F00] mb-6">รายละเอียดการจำนำทอง</h2>
 
-        <!-- แสดงข้อความแสดงความสำเร็จ -->
-        @if(session('success'))
-            <div class="bg-green-500 text-white p-4 mb-6 rounded">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        <div class="grid grid-cols-1 gap-4">
-
- 
-            <div>
-                <strong class="block text-lg">หมายเลขตั๋วจำนำ:</strong>
-                <p>{{ $pawn->ticket_id }}</p> <!-- Use ticket_id directly -->
-            </div>
-
-            <div>
-                <strong class="block text-lg">คำอธิบายสินค้าที่จำนำ:</strong>
-                <p>{{ $pawn->item_description ?? 'ไม่ระบุ' }}</p>
-            </div>
-
-            <div>
-                <strong class="block text-lg">มูลค่าสินค้าที่ประเมิน:</strong>
-                <p>{{ number_format($pawn->amount, 2) }} บาท</p>
-            </div>
-
-            <div>
-                <strong class="block text-lg">อัตราดอกเบี้ย:</strong>
-                <p>{{ $pawn->interest_rate }}%</p>
-            </div>
-
-            <div>
-                <strong class="block text-lg">วันที่ทำการจำนำ:</strong>
-                <p>{{ \Carbon\Carbon::parse($pawn->pawn_date)->format('d/m/Y') }}</p>
-            </div>
-
-            <div>
-                <strong class="block text-lg">วันที่ครบกำหนด:</strong>
-                <p>{{ \Carbon\Carbon::parse($pawn->due_date)->format('d/m/Y') }}</p>
-            </div>
-
-            <div>
-                <strong class="block text-lg">ระยะเวลาการจำนำ:</strong>
-                <p>{{ $pawn->pawn_duration }} เดือน</p>
-            </div>
-
-                <div>
-                    <strong class="block text-lg">ข้อมูลเจ้าของตั๋วจำนำ:</strong>
-                    <p>
-                        @foreach ($customers as $customer)
-                                @if ($customer->customer_id == $pawn->customer_id)
-                                    {{ $customer->name }}
-                                @endif
-                            @endforeach
-                    </p>
+            <!-- แสดงข้อความแสดงความสำเร็จ -->
+            @if(session('success'))
+                <div class="bg-green-500 text-white p-4 mb-6 rounded-lg">
+                    {{ session('success') }}
                 </div>
-            
-        </div>
+            @endif
 
-        <!-- ปุ่มกลับไปที่รายการ -->
-        <div class="mt-6">
-            <a href="{{ route('pawns.index') }}" class="text-blue-500 hover:text-blue-700">ย้อนกลับ</a>
-            <a href="{{ route('pawns.receipt', $pawn->id) }}" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">ดูใบเสร็จ</a>
+            <div class="grid grid-cols-1 gap-4 bg-white p-6 rounded-lg ">
+                <!-- ข้อมูลการจำนำต่างๆ -->
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">หมายเลขตั๋วจำนำ : </strong>
+                    <p class="text-lg text-gray-800">{{ $pawn->ticket_id }}</p>
+                </div>
+
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">คำอธิบายสินค้าที่จำนำ :</strong>
+                    <p class="text-lg text-gray-800">{{ $pawn->description ?? 'ไม่ระบุ' }}</p>
+                </div>
+
+
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">มูลค่าสินค้าที่ประเมิน :</strong>
+                    <p class="text-lg text-gray-800">{{ number_format($pawn->amount, 2) }} บาท</p>
+                </div>
+
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">อัตราดอกเบี้ย :</strong>
+                    <p class="text-lg text-gray-800">{{ $pawn->interest_rate }}%</p>
+                </div>
+
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">วันที่ทำการจำนำ :</strong>
+                    <p class="text-lg text-gray-800">{{ \Carbon\Carbon::parse($pawn->pawn_date)->format('d/m/Y') }}</p>
+                </div>
+
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">วันที่ครบกำหนด :</strong>
+                    <p class="text-lg text-gray-800">{{ \Carbon\Carbon::parse($pawn->due_date)->format('d/m/Y') }}</p>
+                </div>
+
+                <!-- แสดงยอดที่จ่ายไปแล้ว -->
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">ยอดที่ลูกค้าจ่ายไปแล้ว :</strong>
+                    <p class="text-lg text-gray-800">{{ number_format($totalPaid, 2) }} บาท</p>
+                </div>
+
+                <!-- แสดงยอดที่เหลือ -->
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">ยอดที่เหลือต้องจ่าย :</strong>
+                    <p class="text-lg text-gray-800">{{ number_format($remainingBalance, 2) }} บาท</p>
+                </div>
+
+                <!-- ข้อมูลเจ้าของตั๋วจำนำ -->
+                <div class="flex items-center">
+                    <strong class="block text-lg text-[#D43F00]">ข้อมูลเจ้าของตั๋วจำนำ :</strong>
+                    <p class="text-lg text-gray-800">{{ $pawn->customer->name ?? 'ไม่พบข้อมูล' }}</p>
+                </div>
+            </div>
+
+            <!-- ปุ่มกลับไปที่รายการ -->
+            <div class="mt-6 flex justify-between">
+                <a href="{{ route('pawns.index') }}" class="text-[#D43F00] hover:text-[#FF9800] text-lg font-semibold">ย้อนกลับ</a>
+                <a href="{{ route('pawns.receipt', $pawn->id) }}" class="bg-[#D43F00] text-white py-2 px-4 rounded-md hover:bg-[#FF9800] transition-all duration-300 ease-in-out">ดูใบเสร็จ</a>
+            </div>
         </div>
     </div>
 </x-app-layout>
