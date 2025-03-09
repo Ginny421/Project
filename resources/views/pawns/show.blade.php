@@ -1,4 +1,5 @@
 <x-app-layout>
+@livewire('navigation-menu')
     <div class="min-h-screen bg-gradient-to-r from-[#D43F00] to-[#FFC107] text-white py-8">
         <div class="max-w-7xl mx-auto p-8 bg-white shadow-lg rounded-lg">
             <h2 class="text-3xl font-semibold text-center text-[#D43F00] mb-6">รายละเอียดการจำนำทอง</h2>
@@ -46,13 +47,13 @@
                 <!-- แสดงยอดที่จ่ายไปแล้ว -->
                 <div class="flex items-center">
                     <strong class="block text-lg text-[#D43F00]">ยอดที่ลูกค้าจ่ายไปแล้ว :</strong>
-                    <p class="text-lg text-gray-800">{{ number_format($totalPaid, 2) }} บาท</p>
+                    <p class="text-lg text-gray-800">{{ number_format($pawn->totalPayment, 2) }} บาท</p>
                 </div>
 
                 <!-- แสดงยอดที่เหลือ -->
                 <div class="flex items-center">
                     <strong class="block text-lg text-[#D43F00]">ยอดที่เหลือต้องจ่าย :</strong>
-                    <p class="text-lg text-gray-800">{{ number_format($remainingBalance, 2) }} บาท</p>
+                    <p class="text-lg text-gray-800">{{ number_format($pawn->remaining_balance, 2) }} บาท</p>
                 </div>
 
                 <!-- ข้อมูลเจ้าของตั๋วจำนำ -->
@@ -65,7 +66,6 @@
             <!-- ปุ่มกลับไปที่รายการ -->
             <div class="mt-6 flex justify-between">
                 <a href="{{ route('pawns.index') }}" class="text-[#D43F00] hover:text-[#FF9800] text-lg font-semibold">ย้อนกลับ</a>
-                <a href="{{ route('pawns.receipt', $pawn->id) }}" class="bg-[#D43F00] text-white py-2 px-4 rounded-md hover:bg-[#FF9800] transition-all duration-300 ease-in-out">ดูใบเสร็จ</a>
             </div>
         </div>
     </div>

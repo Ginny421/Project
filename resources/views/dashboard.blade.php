@@ -1,4 +1,5 @@
 <x-app-layout>
+@livewire('navigation-menu')
     <div class="min-h-screen bg-gradient-to-r from-[#D43F00] to-[#FFC107] text-white">
         <div class="content-container max-w-4xl mx-auto py-10 px-6">
             <!-- Content ของคุณที่นี่ -->

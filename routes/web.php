@@ -42,13 +42,14 @@ Route::middleware(['auth:sanctum',
         
         Route::get('/pawns', [PawnController::class, 'index'])->middleware('role:staff')->name('pawns.index');
         Route::get('/pawns/completed', [PawnController::class, 'indexComplete'])->middleware('role:staff')->name('pawns.indexcomplete');
-        Route::get('/pawns/expired', [PawnController::class, 'indexExpired'])->middleware('role:staff')->name('pawns.indexexpired');
+        Route::get('/pawns/expired', [PawnController::class, 'indexExpired'])->middleware('role:staff')->name('pawns.indexExpired');
         Route::get('/pawns/create', [PawnController::class, 'create'])->middleware('role:staff')->name('pawns.create');
         Route::post('/pawns', [PawnController::class, 'store'])->middleware('role:staff')->name('pawns.store');
         Route::get('/pawns/{id}', [PawnController::class, 'show'])->middleware('role:staff')->name('pawns.show');
         Route::get('/pawns/{pawn}/receipt', [PawnController::class, 'receipt'])->middleware('role:staff')->name('pawns.receipt');
-        Route::get('/pawned-item/{id}/receipt', [PawnController::class, 'receipt'])->middleware('role:staff');
-        
+        Route::get('/pawned-item/{id}/receipt', [PawnController::class, 'receipt'])->middleware('role:staff')->name('pawns.receipt');
+        Route::delete('/pawns/{id}', [PawnController::class, 'destroy'])->name('pawns.destroy');
+
         Route::post('/pawns/send-notification/{id}', [PawnController::class, 'sendNotification'])->middleware('role:staff')->name('pawns.sendNotification');
         
         Route::post('/line/webhook', [LineWebhookController::class, 'handleLineWebhook'])->middleware('role:staff');
@@ -62,10 +63,7 @@ Route::middleware(['auth:sanctum',
         Route::put('/pawns/{id}/updatePayment', [PawnController::class, 'updatePayment'])->middleware('role:staff')->name('pawns.updatePayment');
         Route::post('/pawns/{id}/processPayment', [PawnController::class, 'processPayment'])->middleware('role:staff')->name('pawns.processPayment');
         Route::get('/pawns/{id}/pay', [PawnController::class, 'pay'])->middleware('role:staff')->name('pawns.pay');
-
-        Route::post('/pawns/{id}/receipt', [PawnController::class, 'receipt'])->name('pawns.receipt');
-
-
+        //Route::get('/pawns/{id}/receipt', [PawnController::class, 'generateReceipt'])->name('pawns.generateReceipt');
 
         
 });

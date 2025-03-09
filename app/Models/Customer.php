@@ -9,6 +9,6 @@ class Customer extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'customer_id'; // กำหนด PK ตาม Data Dictionary
+    protected $primaryKey = 'id'; // กำหนด PK ตาม Data Dictionary
     protected $fillable = ['name', 'phone_number', 'address'];
 }

@@ -1,4 +1,5 @@
 <x-app-layout>
+@livewire('navigation-menu')
     <div class="min-h-screen bg-gradient-to-r from-[#D43F00] to-[#FFC107] text-white py-8">
         <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-center text-3xl font-semibold text-[#D43F00] mb-6">รายการลูกค้า</h2>
@@ -28,12 +29,12 @@
                             <td class="px-4 py-2 border-b text-center text-[#000000]">{{ $customer->address }}</td>
                             <td class="px-4 py-2 border-b text-center flex justify-center space-x-4">
                                 <button class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-all duration-300 ease-in-out">
-                                    <a href="{{ route('customers.show', $customer->customer_id) }}">ดูข้อมูล</a>
+                                    <a href="{{ route('customers.show', $customer->id) }}">ดูข้อมูล</a>
                                 </button>
                                 <button class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-all duration-300 ease-in-out">
-                                <a href="{{ route('customers.edit', $customer->customer_id) }}" >แก้ไขข้อมูล</a>
+                                <a href="{{ route('customers.edit', $customer->id) }}" >แก้ไขข้อมูล</a>
                                 </button>
-                                <form action="{{ route('customers.destroy', $customer->customer_id) }}" method="POST" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้?');" class="inline-block ml-2">
+                                <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้?');" class="inline-block ml-2">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-all duration-300 ease-in-out">ลบข้อมูล</button>

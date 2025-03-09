@@ -1,4 +1,5 @@
 <x-app-layout>
+@livewire('navigation-menu')
     <div class="min-h-screen bg-gradient-to-r from-[#D43F00] to-[#FFC107] text-white py-8">
         <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
             <h2 class="text-center text-3xl font-semibold text-[#D43F00] mb-6">แก้ไขข้อมูลลูกค้า</h2>

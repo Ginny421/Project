@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
 {
     Schema::create('customers', function (Blueprint $table) {
-        $table->id('customer_id'); // ตั้งชื่อ PK ตาม Data Dictionary
+        $table->id(); // ตั้งชื่อ PK ตาม Data Dictionary
         $table->string('name');
         $table->string('phone_number');
         $table->string('address')->nullable();

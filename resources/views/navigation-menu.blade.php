@@ -24,7 +24,7 @@
                     <x-nav-link href="{{ route('pawns.indexcomplete') }}" :active="request()->routeIs('pawns.indexcomplete')">
                         {{ __('ข้อมูลรายการจำนำทองที่เสร็จสิ้นแล้ว') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('pawns.indexexpired') }}" :active="request()->routeIs('pawns.indexexpired')">
+                    <x-nav-link href="{{ route('pawns.indexExpired') }}" :active="request()->routeIs('pawns.indexExpired')">
                         {{ __('ข้อมูลรายการจำนำทองที่หลุดจำนำ') }}
                     </x-nav-link>
                 </div>

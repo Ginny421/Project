@@ -10,29 +10,30 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up()
-    {
-        if (!Schema::hasTable('pawned_items')) {
-            Schema::create('pawned_items', function (Blueprint $table) {
-                $table->id();
-                $table->string('ticket_id', 6); // เปลี่ยนเป็น varchar(6) สำหรับหมายเลขตั๋ว
-                $table->unsignedBigInteger('customer_id'); // เพิ่มคอลัมน์ customer_id
-                $table->string('product_name');
-                $table->decimal('amount', 10, 2);
-                $table->decimal('interest_rate', 5, 2);
-                $table->date('pawn_date');
-                $table->date('due_date');
-                $table->integer('pawn_duration');
-                $table->timestamps();
-            
-                // เชื่อมโยงกับตาราง customers
-                $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('cascade');
-                $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
-                
-                // หมายเหตุ: คุณไม่จำเป็นต้องใช้ foreign key สำหรับ ticket_id หากไม่ได้เชื่อมโยงกับตาราง tickets
-                // ถ้าคุณต้องการให้ `ticket_id` ไม่เชื่อมโยงกับ `tickets` ก็สามารถลบคำสั่งนี้ได้
-            });
-        }
+{
+    if (!Schema::hasTable('pawned_items')) {
+        Schema::create('pawned_items', function (Blueprint $table) {
+            $table->id();  // สร้างคอลัมน์ id ที่เป็น auto_increment
+            $table->string('ticket_id', 10)->unique();  // กำหนดให้ ticket_id เป็น string มีความยาว 6 ตัวและ unique
+            $table->unsignedBigInteger('customer_id');  // เพิ่มคอลัมน์ customer_id
+            $table->string('product_name');
+            $table->decimal('amount', 10, 2);
+            $table->decimal('interest_rate', 5, 2);
+            $table->date('pawn_date');
+            $table->date('due_date');
+            $table->integer('pawn_duration');
+            $table->text('description');
+            $table->string('status')->default('active');
+            $table->decimal('totalPayment', 10, 2)->default(0);;
+            $table->decimal('remaining_balance', 10, 2)->default(0);
+            $table->timestamps();
+
+            // เชื่อมโยงกับตาราง customers
+            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
+        });
     }
+}
+
 
     /**
      * Reverse the migrations.

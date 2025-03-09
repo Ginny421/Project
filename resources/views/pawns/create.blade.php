@@ -1,6 +1,8 @@
 <x-app-layout>
+@livewire('navigation-menu')
     <div class="min-h-screen bg-gradient-to-r from-[#D43F00] to-[#FFC107] text-white py-8">
         <div class="max-w-3xl mx-auto p-8 bg-white shadow-lg rounded-lg">
+       
             <h2 class="text-3xl font-semibold text-center text-[#D43F00] mb-6">เพิ่มข้อมูลการจำนำทอง</h2>
 
             @if(session('success'))
@@ -19,7 +21,7 @@
                     <select id="customer_id" name="customer_id" class="w-full mt-1 p-3 border border-[#D43F00] rounded-md focus:ring-2 focus:ring-[#FFC107] text-[#000000]" required>
                         <option value="">เลือกชื่อลูกค้า</option>
                         @foreach ($customers as $customer)
-                            <option value="{{ $customer->customer_id }}">{{ $customer->name }}</option>
+                            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
                         @endforeach
                     </select>
                 </div>

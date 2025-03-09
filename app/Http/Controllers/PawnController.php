@@ -55,17 +55,14 @@ public function indexExpired(Request $request)
 
     $customers = Customer::all();
 
-    return view('pawns.indexcomplete', compact('pawns', 'customers'));
+    return view('pawns.indexExpired', compact('pawns', 'customers'));
 }
-
-
 
     // Show pawn details
     public function show($id)
     {
        // ดึงข้อมูล pawned item พร้อมกับข้อมูลของลูกค้า
     $pawn = PawnedItem::with(['customer', 'payPerMonths'])->findOrFail($id);
-
     // คำนวณยอดที่ลูกค้าจ่ายไปแล้ว
     $totalPaid = $pawn->payPerMonths->sum('monthly_payment');
 
@@ -74,9 +71,10 @@ public function indexExpired(Request $request)
     $remainingBalance = $totalAmount - $totalPaid;
 
     // ส่งข้อมูลทั้งหมดไปยัง view
-    return view('pawns.show', compact('pawn','totalPaid', 'remainingBalance'));
+    return view('pawns.show', compact('pawn','totalPaid', 'remainingBalance','totalPaid'));
     }
 
+    
     public function create()
 {
     // ดึงข้อมูลสินค้าจากฐานข้อมูล
@@ -85,6 +83,18 @@ public function indexExpired(Request $request)
 
     // ส่งข้อมูลไปยัง view
     return view('pawns.create', compact('pawnedItems','customers'));
+}
+
+public function destroy($id)
+{
+    // ค้นหา PawnedItem ตาม ID
+    $pawn = PawnedItem::findOrFail($id);
+
+    // ลบข้อมูล PawnedItem
+    $pawn->delete();
+
+    // ส่งข้อความสำเร็จและกลับไปยังหน้าหลัก
+    return redirect()->route('pawns.index')->with('success', 'ลบข้อมูลการจำนำสำเร็จ!');
 }
 
 
@@ -102,18 +112,42 @@ public function indexExpired(Request $request)
         'due_date_pawn' => 'required|date|after_or_equal:pawn_date',
         'pawn_duration' => 'required|integer|min:1',
         'backup_interest_rate' => 'required|numeric',
+
     ]);
 
     // คำนวณ interestPerMonth
-    $interestPerMonth = ($validated['interest_rate'] / 100) * $validated['amount'] / 12;
-
-    // คำนวณ totalMonthlyPayment
-    $totalMonthlyPayment = ($validated['amount'] / $validated['pawn_duration']) + $interestPerMonth;
-
-    // Generate ticket_id
+    $interestPerMonth = $validated['interest_rate'];
+    // คำนวณ totalPayment
+    $totalPayment = ((($validated['amount'] * ($interestPerMonth / 100 )) * ($validated['pawn_duration']) )+($validated['amount']));
+    // หาตั๋วจำนำล่าสุด
     $latestTicket = PawnedItem::latest('ticket_id')->first();
-    $nextTicketId = $latestTicket ? (int)$latestTicket->ticket_id + 1 : 1;
-    $ticketId = str_pad($nextTicketId, 6, '0', STR_PAD_LEFT);
+
+    // แยก ticket_id ออกเป็นสองส่วน
+    if ($latestTicket) {
+        $ticketParts = explode('-', $latestTicket->ticket_id);
+        $ticketNumber = (int) $ticketParts[0];  // ส่วนที่เป็นตัวเลข 6 หลัก
+        $roundNumber = (int) $ticketParts[1];   // ส่วนที่เป็นรอบ
+
+    // ตรวจสอบว่าเลข 6 หลักถึง 999999 แล้วหรือยัง
+    if ($ticketNumber == 999999) {
+        // ถ้าเลข 6 หลักถึง 999999 ให้เริ่มรอบใหม่
+        $ticketNumber = 1;
+        $roundNumber++;
+    } else {
+        // ถ้าไม่ถึง 999999 ให้เพิ่มเลข 6 หลัก
+        $ticketNumber++;
+    }
+    } else {
+        // ถ้าไม่มีข้อมูลในฐานข้อมูล ให้เริ่มที่ 000001-1
+        $ticketNumber = 1;
+        $roundNumber = 1;
+    }
+
+// สร้าง ticket_id ในรูปแบบ 000001-1
+$ticketId = str_pad($ticketNumber, 6, '0', STR_PAD_LEFT) . '-' . $roundNumber;
+
+// ใช้ $ticketId ในการสร้างหรือลงทะเบียนตั๋วจำนำ
+
 
     // ✅ สร้าง PawnedItem
     $pawnedItem = PawnedItem::create([
@@ -126,6 +160,8 @@ public function indexExpired(Request $request)
         'due_date' => $validated['due_date_pawn'],
         'pawn_duration' => $validated['pawn_duration'],
         'description' => $validated['description'],
+        'totalPayment' => $totalPayment,
+        'remaining_balance'=> $totalPayment,
     ]);
 
     // ✅ สร้าง Transaction
@@ -135,64 +171,57 @@ public function indexExpired(Request $request)
         'backup_interest_rate' => $validated['backup_interest_rate'],
     ]);
 
-    // ✅ บันทึกข้อมูลในตาราง pay_per_month
-    PayPerMonth::create([
-        'pawned_item_id' => $pawnedItem->id,
-        'interest' => $interestPerMonth,
-        'total_monthly_payment' => $totalMonthlyPayment,
-    ]);
 
     return redirect()->route('pawns.index')->with('success', 'เพิ่มข้อมูลการจำนำและธุรกรรมสำเร็จ!');
 }
 
-
-    
-
-
     // In your PawnController
-public function receipt($id)
+    public function receipt($id)
 {
     // Find the pawned item by ID
     $pawn = PawnedItem::findOrFail($id);
-    $customers = Customer::all();
+    $pay = PayPerMonth::where('pawned_item_id', $id)->latest()->first();
+    // ดึงค่าจากฐานข้อมูลโดยตรง
+    if ($pay) {
+        $total_monthly_payment = $pay->total_monthly_payment;
+    } else {
+        $total_monthly_payment = 0; // ถ้าไม่เจอข้อมูล กำหนดให้เป็น 0
+    }
+    $remaining_balance = $pawn->remaining_balance;
 
-    // Logic for receipt generation, you might want to return a view or PDF
-    return view('receipt', compact('pawn','customers'));
+    // ส่งตัวแปรทั้งหมดไปยัง view
+    return view('receipt', compact('pawn', 'total_monthly_payment', 'remaining_balance'));
 }
-
-
 
 public function processPayment(Request $request, $id)
 {
     $pawn = PawnedItem::findOrFail($id);
-
+    $pay = PayPerMonth::where('pawned_item_id', $id)->latest()->first();
     // รับค่าที่ลูกค้าชำระ
     $paymentAmount = $request->input('payment_amount');
-
     // คำนวณยอดที่ต้องจ่ายทั้งหมด (เงินต้น + ดอกเบี้ย)
     $totalAmount = $pawn->amount + ($pawn->amount * $pawn->interest_rate / 100);
-
     // คำนวณยอดที่ชำระไปแล้วจากการบันทึกในฐานข้อมูล
     $totalPaid = $pawn->payPerMonths->sum('total_monthly_payment');
-
     // คำนวณยอดคงเหลือ (ยอดที่ต้องจ่ายทั้งหมด - ยอดที่ชำระไปแล้ว)
     $remainingBalance = $totalAmount - $totalPaid;
-
     // ลดยอดที่ลูกค้าชำระออกจากยอดคงเหลือ
     $remainingBalance -= $paymentAmount;
-
     // บันทึกข้อมูลการชำระเงินลงในฐานข้อมูล
-    $totalMonthlyPayment = $paymentAmount;
+    $totalPayment = $paymentAmount;
     $payPerMonth = $pawn->payPerMonths()->create([
         'interest' => $pawn->interest_rate,
-        'total_monthly_payment' => $totalMonthlyPayment,
+        'total_monthly_payment' => $totalPayment,
     ]);
 
+    $totalPaid += $paymentAmount; 
     // อัปเดตยอดคงเหลือใน PawnedItem
     $pawn->remaining_balance = $remainingBalance;
+    $pawn->totalPayment = $totalPaid;
+
 
     // ตรวจสอบวันที่ครบกำหนด หากเลยกำหนดแล้วแต่ยังไม่ได้ชำระ เปลี่ยนสถานะเป็น 'expired'
-    if (now()->greaterThan($pawn->due_date) && $remainingBalance > 0) {
+    if (now()->greaterThan($pawn->due_date) && $pawn->$remainingBalance > 0) {
         $pawn->status = 'expired'; // เปลี่ยนสถานะเป็น 'expired' หรือ 'หลุดจำนำ'
     } elseif ($remainingBalance <= 0) {
         // ถ้าชำระเงินหมดแล้ว เปลี่ยนสถานะเป็น 'completed'
@@ -223,7 +252,9 @@ public function pay($id)
     $remainingBalance = $totalAmount - $totalPaid;
 
     // ส่งข้อมูลไปยัง Blade template
-    return view('pawns.pay', compact('pawn', 'remainingBalance'));
+    return view('pawns.pay', compact('pawn', 'remainingBalance',));
 }
+
+
 
 }
