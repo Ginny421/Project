@@ -47,7 +47,7 @@ Route::middleware(['auth:sanctum',
         Route::post('/pawns', [PawnController::class, 'store'])->middleware('role:staff')->name('pawns.store');
         Route::get('/pawns/{id}', [PawnController::class, 'show'])->middleware('role:staff')->name('pawns.show');
         Route::get('/pawns/{pawn}/receipt', [PawnController::class, 'receipt'])->middleware('role:staff')->name('pawns.receipt');
-        Route::get('/pawned-item/{id}/receipt', [PawnController::class, 'receipt'])->middleware('role:staff')->name('pawns.receipt');
+        //Route::get('/pawned-item/{id}/receipt', [PawnController::class, 'receipt'])->middleware('role:staff')->name('pawns.receipt');
         Route::delete('/pawns/{id}', [PawnController::class, 'destroy'])->name('pawns.destroy');
 
         Route::post('/pawns/send-notification/{id}', [PawnController::class, 'sendNotification'])->middleware('role:staff')->name('pawns.sendNotification');
@@ -63,8 +63,10 @@ Route::middleware(['auth:sanctum',
         Route::put('/pawns/{id}/updatePayment', [PawnController::class, 'updatePayment'])->middleware('role:staff')->name('pawns.updatePayment');
         Route::post('/pawns/{id}/processPayment', [PawnController::class, 'processPayment'])->middleware('role:staff')->name('pawns.processPayment');
         Route::get('/pawns/{id}/pay', [PawnController::class, 'pay'])->middleware('role:staff')->name('pawns.pay');
-        //Route::get('/pawns/{id}/receipt', [PawnController::class, 'generateReceipt'])->name('pawns.generateReceipt');
+        Route::get('/pawns/{id}/receipt', [PawnController::class, 'generateReceipt'])->name('pawns.generateReceipt');
 
-        
+        Route::get('/pawns/search', [PawnController::class, 'search'])->middleware('role:staff')->name('pawns.search');
+
+        Route::get('/pawns/update-interest-rate', [PawnController::class, 'updateInterestRate'])->name('pawns.updateInterestRate');
+
 });
-

@@ -20,8 +20,7 @@ return new class extends Migration
 
             // Add other columns for transactions
             $table->date('transaction_date');
-            $table->decimal('backup_interest_rate', 5, 2);
-            $table->decimal('amount_paid', 10, 2)->nullable();  // Amount can be null
+            
             
 
             // Add timestamps

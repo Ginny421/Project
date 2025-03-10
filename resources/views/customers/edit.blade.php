@@ -4,7 +4,7 @@
         <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
             <h2 class="text-center text-3xl font-semibold text-[#D43F00] mb-6">แก้ไขข้อมูลลูกค้า</h2>
 
-            <form action="{{ route('customers.update', $customer->customer_id) }}" method="POST">
+            <form action="{{ route('customers.update', $customer->id) }}" method="POST">
                 @csrf
                 @method('PUT')
 

@@ -111,8 +111,6 @@ public function destroy($id)
         'pawn_date' => 'required|date',
         'due_date_pawn' => 'required|date|after_or_equal:pawn_date',
         'pawn_duration' => 'required|integer|min:1',
-        'backup_interest_rate' => 'required|numeric',
-
     ]);
 
     // คำนวณ interestPerMonth
@@ -168,8 +166,18 @@ $ticketId = str_pad($ticketNumber, 6, '0', STR_PAD_LEFT) . '-' . $roundNumber;
     Transaction::create([
         'pawned_item_id' => $pawnedItem->id,
         'transaction_date' => $validated['pawn_date'],
-        'backup_interest_rate' => $validated['backup_interest_rate'],
     ]);
+
+    if (now()->greaterThan($pawnedItem->due_date) && $pawnedItem->remaining_balance > 0) {
+        $pawnedItem->status = 'expired'; // Status is 'expired' if the due date has passed and balance remains
+    } elseif ($pawnedItem->remaining_balance <= 0) {
+        $pawnedItem->status = 'completed'; // Status is 'completed' if the balance is fully paid
+        $pawnedItem->remaining_balance = 0; // Set remaining balance to 0
+    } else {
+        $pawnedItem->status = 'active'; // Status is 'active' if balance is still due
+    }
+    // Save updated pawn status
+    $pawnedItem->save();
 
 
     return redirect()->route('pawns.index')->with('success', 'เพิ่มข้อมูลการจำนำและธุรกรรมสำเร็จ!');
@@ -236,7 +244,7 @@ public function processPayment(Request $request, $id)
 
     // แสดงข้อความสำเร็จและส่งข้อมูลไปยังหน้าแรก
 // แสดงข้อความสำเร็จและส่งข้อมูลไปยังหน้าใบเสร็จ
-return redirect()->route('pawns.receipt', ['id' => $pawn->id]);
+return redirect()->route('pawns.receipt', ['pawn' => $pawn->id]);
 
 ;}
 
@@ -254,6 +262,42 @@ public function pay($id)
     // ส่งข้อมูลไปยัง Blade template
     return view('pawns.pay', compact('pawn', 'remainingBalance',));
 }
+
+public function search(Request $request)
+{
+
+    $search = $request->get('search');
+    $query = PawnedItem::query();
+    if ($search) {
+        $query->where(function($q) use ($search) {
+            $q->where('ticket_id', 'like', '%' . $search . '%')
+              ->orWhereHas('customer', function($q) use ($search) {
+                  $q->where('name', 'like', '%' . $search . '%');
+              });
+        });
+    }
+    $pawns = $query->get();
+    $customers = Customer::all();
+    return view('pawns.index', compact('pawns', 'customers', 'search'));
+}
+
+public function updateInterestRate(Request $request)
+{
+    // ตรวจสอบว่า request มี interest_rate
+    $request->validate([
+        'interest_rate' => 'required|numeric|min:0',
+    ]);
+
+    $pawned_items->update([
+        'interest_rate' => $request->interest_rate,
+    ]);
+
+    // ส่งข้อความสำเร็จและกลับไปยังหน้าหลัก
+    return redirect()->route('pawns.index')->with('success', 'อัปเดตดอกเบี้ยสำเร็จ!');
+
+}
+
+
 
 
 

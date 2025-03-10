@@ -27,7 +27,7 @@
                 </thead>
                 <tbody>
                     @foreach ($pawns as $pawn)
-                        @if ($pawn->status == 'completed')
+                        @if ($pawn->status == 'expired')
                             <tr class="hover:bg-gray-100">
                                 <td class="py-3 px-6 border-b text-[#000000]">{{ $pawn->id }}</td>
                                 <td class="py-3 px-6 border-b text-[#000000]">{{ $pawn->ticket_id }}</td>

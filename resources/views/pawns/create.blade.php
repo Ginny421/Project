@@ -76,10 +76,6 @@
                 <!-- 🟢 ข้อมูล Transaction -->
               
 
-                <div class="mb-6">
-                    <label for="backup_interest_rate" class="block text-sm font-medium text-[#D43F00]">ดอกเบี้ยสำรอง (กรณีเกิดวิกฤต)</label>
-                    <input type="number" id="backup_interest_rate" name="backup_interest_rate" step="0.01" value="0.5" class="w-full mt-1 p-3 border border-[#D43F00] rounded-md focus:ring-2 focus:ring-[#FFC107] text-[#000000]" required>
-                </div>
 
                
 

@@ -37,7 +37,7 @@ class CustomerController extends Controller
 
     public function show($id)
     {
-        $customer = Customer::where('customer_id', $id)->first();
+        $customer = Customer::where('id', $id)->first();
     
         if (!$customer) {
             abort(404, 'ไม่พบลูกค้าในระบบ');
